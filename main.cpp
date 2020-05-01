@@ -1,95 +1,24 @@
-#include <cstdlib> 
-#include <cstdio> 
-#include <cmath> 
-#include <fstream> 
-#include <vector> 
-#include <iostream> 
-#include <cassert> 
+#include<GL/freeglut.h>
+#include<vector>
+#include"Sphere.h"
 #include <algorithm>
-//#include "Sphere.h"
-#define MAX_RAY_DEPTH 5 
-
 using namespace std;
-template<typename T>
-class Vec3
+/** Initializes GL states
+* Called by main after window creation*/
+#define M_PI 3.141592653589793
+#define INFINITY 1e8
+std::vector<Sphere> spheres;
+#define MAX_RAY_DEPTH 10
+unsigned width = 640, height = 480;
+void init()
 {
-public:
-    T x, y, z;
-    Vec3() : x(T(0)), y(T(0)), z(T(0)) {}
-    Vec3(T xx) : x(xx), y(xx), z(xx) {}
-    Vec3(T xx, T yy, T zz) : x(xx), y(yy), z(zz) {}
-    Vec3& normalize()
-    {
-        T nor2 = length2();
-        if (nor2 > 0) {
-            T invNor = 1 / sqrt(nor2);
-            x *= invNor, y *= invNor, z *= invNor;
-        }
-        return *this;
-    }
-    Vec3<T> operator * (const T& f) const { return Vec3<T>(x * f, y * f, z * f); }
-    Vec3<T> operator * (const Vec3<T>& v) const { return Vec3<T>(x * v.x, y * v.y, z * v.z); }
-    T dot(const Vec3<T>& v) const { return x * v.x + y * v.y + z * v.z; }
-    Vec3<T> operator - (const Vec3<T>& v) const { return Vec3<T>(x - v.x, y - v.y, z - v.z); }
-    Vec3<T> operator + (const Vec3<T>& v) const { return Vec3<T>(x + v.x, y + v.y, z + v.z); }
-    Vec3<T>& operator += (const Vec3<T>& v) { x += v.x, y += v.y, z += v.z; return *this; }
-    Vec3<T>& operator *= (const Vec3<T>& v) { x *= v.x, y *= v.y, z *= v.z; return *this; }
-    Vec3<T> operator - () const { return Vec3<T>(-x, -y, -z); }
-    T length2() const { return x * x + y * y + z * z; }
-    T length() const { return sqrt(length2()); }
-    friend ostream& operator << (ostream& os, const Vec3<T>& v)
-    {
-        os << "[" << v.x << " " << v.y << " " << v.z << "]";
-        return os;
-    }
-};
-
-typedef Vec3<float> Vec3f;
-class Sphere
-{
-public:
-    Vec3f center;                           /// position of the sphere 
-    float radius, radius2;                  /// sphere radius and radius^2 
-    Vec3f surfaceColor, emissionColor;      /// surface color and emission (light) 
-    float transparency, reflection;         /// surface transparency and reflectivity 
-    Sphere(
-        const Vec3f& c,
-        const float& r,
-        const Vec3f& sc,
-        const float& refl = 0,
-        const float& transp = 0,
-        const Vec3f& ec = 0) :
-        center(c), radius(r), radius2(r* r), surfaceColor(sc), emissionColor(ec),
-        transparency(transp), reflection(refl)
-    { /* empty */
-    }
-    bool intersect(const Vec3f& rayorig, const Vec3f& raydir, float& t0, float& t1) const
-    {
-        Vec3f l = center - rayorig;
-        float tca = l.dot(raydir);
-        if (tca < 0) return false;
-        float d2 = l.dot(l) - tca * tca;
-        if (d2 > radius2) return false;
-        float thc = sqrt(radius2 - d2);
-        t0 = tca - thc;
-        t1 = tca + thc;
-
-        return true;
-    }
-};
-/*#if defined __linux__ || defined __APPLE__ 
-// "Compiled for Linux
-#else 
-// Windows doesn't define these values by default, Linux does
-#define M_PI 3.141592653589793 
-#define INFINITY 1e8 
-#endif */
-
+    glClearColor(0.0, 0.0, 0.0, 0.0);
+    gluOrtho2D(width, 0.0, height, 0.0);
+}
 float mix(const float& a, const float& b, const float& mix)
 {
     return b * mix + a * (1 - mix);
 }
-vector<Sphere> spheres;
 Vec3f trace(const Vec3f& rayorig, const Vec3f& raydir, const vector<Sphere>& spheres, const int& depth)
 {
     //if (raydir.length() != 1) cerr << "Error " << raydir << endl;
@@ -108,15 +37,15 @@ Vec3f trace(const Vec3f& rayorig, const Vec3f& raydir, const vector<Sphere>& sph
     }
     // if there's no intersection return black or background color
     if (!sphere) return Vec3f(2);
-    Vec3f surfaceColor = 0; // color of the ray/surfaceof the object intersected by the ray 
-    Vec3f phit = rayorig + raydir * tnear; // point of intersection 
-    Vec3f nhit = phit - sphere->center; // normal at the intersection point 
-    nhit.normalize(); // normalize normal direction 
+    Vec3f surfaceColor = 0; // color of the ray/surfaceof the object intersected by the ray
+    Vec3f phit = rayorig + raydir * tnear; // point of intersection
+    Vec3f nhit = phit - sphere->center; // normal at the intersection point
+    nhit.normalize(); // normalize normal direction
     // If the normal and the view direction are not opposite to each other
     // reverse the normal direction. That also means we are inside the sphere so set
     // the inside bool to true. Finally reverse the sign of IdotN which we want
     // positive.
-    float bias = 1e-4; // add some bias to the point from which we will be tracing 
+    float bias = 1e-4; // add some bias to the point from which we will be tracing
     bool inside = false;
     if (raydir.dot(nhit) > 0) nhit = -nhit, inside = true;
     if ((sphere->transparency > 0 || sphere->reflection > 0) && depth < MAX_RAY_DEPTH) {
@@ -131,7 +60,7 @@ Vec3f trace(const Vec3f& rayorig, const Vec3f& raydir, const vector<Sphere>& sph
         Vec3f refraction = 0;
         // if the sphere is also transparent compute refraction ray (transmission)
         if (sphere->transparency) {
-            float ior = 1.1, eta = (inside) ? ior : 1 / ior; // are we inside or outside the surface? 
+            float ior = 1.1, eta = (inside) ? ior : 1 / ior; // are we inside or outside the surface?
             float cosi = -nhit.dot(raydir);
             float k = 1 - eta * eta * (1 - cosi * cosi);
             Vec3f refrdir = raydir * eta + nhit * (eta * cosi - sqrt(k));
@@ -168,13 +97,12 @@ Vec3f trace(const Vec3f& rayorig, const Vec3f& raydir, const vector<Sphere>& sph
 
     return surfaceColor + sphere->emissionColor;
 }
-void render(const vector<Sphere>& spheres)
+void display()
 {
-    unsigned width = 1600, height = 900;
     Vec3f* image = new Vec3f[width * height], * pixel = image;
     float invWidth = 1 / float(width), invHeight = 1 / float(height);
-    float fov = 30, aspectratio = width / float(height);
-    float angle = tan(M_PI * 0.5 * fov / 180.);
+    float fov = 60, aspectratio = width / float(height);
+    float angle = tan(M_PI * fov / 360.);
     // Trace rays
     for (unsigned y = 0; y < height; ++y) {
         for (unsigned x = 0; x < width; ++x, ++pixel) {
@@ -185,29 +113,40 @@ void render(const vector<Sphere>& spheres)
             *pixel = trace(Vec3f(0), raydir, spheres, 0);
         }
     }
-    // Save result to a PPM image (keep these flags if you compile under Windows)
-    ofstream ofs("./untitled.ppm", ios::out | ios::binary);
-    ofs << "P6\n" << width << " " << height << "\n255\n";
-    for (unsigned i = 0; i < width * height; ++i) {
-        ofs << (unsigned char)(min(float(1), image[i].x) * 255) <<
-            (unsigned char)(min(float(1), image[i].y) * 255) <<
-            (unsigned char)(min(float(1), image[i].z) * 255);
+    glBegin(GL_POINTS);
+    for (int i = 0; i < width * height; ++i) {
+        glColor3f((min(float(1), image[i].x)), (min(float(1), image[i].y)), (min(float(1), image[i].z)));
+        glVertex2d(((i % width)), ((i / width)));
     }
-    ofs.close();
     delete[] image;
+    glutSwapBuffers();
 }
 int main(int argc, char** argv)
 {
-    //srand48(13);
-    // position, radius, surface color, reflectivity, transparency, emission color
-    spheres.push_back(Sphere(Vec3f(0.0, -10004, -20), 10000, Vec3f(0.20, 0.20, 0.20), 0, 0.0));
+    spheres.push_back(Sphere(Vec3f(0.0, -10004, -20), 10000, Vec3f(0.75, 0.75, 0.75), 1, 0.0));
     spheres.push_back(Sphere(Vec3f(0.0, 0, -20), 4, Vec3f(1.00, 0.32, 0.36), 1, 0.5));
     spheres.push_back(Sphere(Vec3f(5.0, -1, -15), 2, Vec3f(0.90, 0.76, 0.46), 1, 0.0));
     spheres.push_back(Sphere(Vec3f(5.0, 0, -25), 3, Vec3f(0.65, 0.77, 0.97), 1, 0.0));
     spheres.push_back(Sphere(Vec3f(-5.5, 0, -15), 3, Vec3f(0.90, 0.90, 0.90), 1, 0.0));
     // light
     spheres.push_back(Sphere(Vec3f(0.0, 20, -30), 3, Vec3f(0.00, 0.00, 0.00), 0, 0.0, Vec3f(3)));
-    render(spheres);
+    
+    /** Initialize OpenGL/GLUT */
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+
+    /** Make a window */
+    glutInitWindowSize(width, height);
+    glutCreateWindow("Ray Tracing");
+    /** Initialize GL states & register callbacks */
+    init();
+    /** The glut display function to render our scene to the
+    * window we made */
+    glutDisplayFunc(display);
+    /** Glut idle function is defines what happens when our screen
+    * is idle,i.e, we arent interacting with it */
+    //glutIdleFunc(display);
+    glutMainLoop();
 
     return 0;
 }
