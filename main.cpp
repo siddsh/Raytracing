@@ -5,8 +5,6 @@
 using namespace std;
 /** Initializes GL states
 * Called by main after window creation*/
-#define M_PI 3.141592653589793
-#define INFINITY 1e8
 std::vector<Sphere> spheres;
 #define MAX_RAY_DEPTH 10
 unsigned width = 640, height = 480;
