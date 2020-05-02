@@ -3,8 +3,6 @@
 #include"Sphere.h"
 #include <algorithm>
 using namespace std;
-/** Initializes GL states
-* Called by main after window creation*/
 std::vector<Sphere> spheres;
 #define MAX_RAY_DEPTH 10
 unsigned width = 640, height = 480;
