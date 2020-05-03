@@ -4,17 +4,20 @@
 #include <algorithm>
 using namespace std;
 std::vector<Sphere> spheres;
-#define MAX_RAY_DEPTH 10
+#define MAX_RAY_DEPTH 15
 unsigned width = 640, height = 480;
+/**Initializes the glut window setting the axes and background to black*/
 void init()
 {
-    glClearColor(0.0, 0.0, 0.0, 0.0);
+    glClearColor(0.88, 0.67, 0.37, 1.0);
     gluOrtho2D(width, 0.0, height, 0.0);
 }
+/**Interpolates between 2 points with the param of mix */
 float mix(const float& a, const float& b, const float& mix)
 {
     return b * mix + a * (1 - mix);
 }
+/**Finds the final color of the pixel to be rendered by the ray tracing algorithm*/
 Vec3f trace(const Vec3f& rayorig, const Vec3f& raydir, const vector<Sphere>& spheres, const int& depth)
 {
     //if (raydir.length() != 1) cerr << "Error " << raydir << endl;
@@ -93,6 +96,7 @@ Vec3f trace(const Vec3f& rayorig, const Vec3f& raydir, const vector<Sphere>& sph
 
     return surfaceColor + sphere->emissionColor;
 }
+//**Finds the pixle values(r, g, b) and displays them*/
 void display()
 {
     Vec3f* image = new Vec3f[width * height], * pixel = image;
@@ -117,16 +121,24 @@ void display()
     delete[] image;
     glutSwapBuffers();
 }
+/**Initializes the objects and the light source with their reflectivity and color and absorbance and their position and opens the glut window and renders the scene*/
 int main(int argc, char** argv)
 {
-    spheres.push_back(Sphere(Vec3f(0.0, -10004, -20), 10000, Vec3f(0.75, 0.75, 0.75), 1, 0.0));
-    spheres.push_back(Sphere(Vec3f(0.0, 0, -20), 4, Vec3f(1.00, 0.32, 0.36), 1, 0.5));
+    //Background
+    spheres.push_back(Sphere(Vec3f(0.0, -10004, -20), 10000, Vec3f(0.80, 0.96, 1.0), 1, 0.0));
+    //red
+    spheres.push_back(Sphere(Vec3f(0.0, 1, -20), 4, Vec3f(1.00, 0.32, 0.36), 1, 0.5));
+    //Yellow
     spheres.push_back(Sphere(Vec3f(5.0, -1, -15), 2, Vec3f(0.90, 0.76, 0.46), 1, 0.0));
+    //Blue
     spheres.push_back(Sphere(Vec3f(5.0, 0, -25), 3, Vec3f(0.65, 0.77, 0.97), 1, 0.0));
+    //Black
     spheres.push_back(Sphere(Vec3f(-5.5, 0, -15), 3, Vec3f(0.90, 0.90, 0.90), 1, 0.0));
+    //torquoise
+    spheres.push_back(Sphere(Vec3f(3.0, 4, -20), 3, Vec3f(0.32, 1.0, 1.0), 1, 0.0));
     // light
     spheres.push_back(Sphere(Vec3f(0.0, 20, -30), 3, Vec3f(0.00, 0.00, 0.00), 0, 0.0, Vec3f(3)));
-    
+    spheres.push_back(Sphere(Vec3f(-60, 10, 30), 10, Vec3f(0.00, 0.00, 0.00), 0, 0.0, Vec3f(3)));
     /** Initialize OpenGL/GLUT */
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);

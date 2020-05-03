@@ -6,6 +6,7 @@
 using namespace std;
 
 template<typename T>
+/*Class to represent 3D coordinates */
 class Vec3
 {
 public:
@@ -25,9 +26,4 @@ public:
     Vec3<T>& operator += (const Vec3<T>& v) ;
     Vec3<T>& operator *= (const Vec3<T>& v) ;
     Vec3<T> operator - () const;
-    /*friend std::ostream& operator << (std::ostream& os, const Vec3<T>& v)
-    {
-        os << "[" << v.x << " " << v.y << " " << v.z << "]";
-        return os;
-    }*/
 };

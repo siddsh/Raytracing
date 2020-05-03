@@ -8,6 +8,7 @@
 
 
 typedef Vec3<float> Vec3f;
+/**Sphere class with attributes like center radius reflectivity and transparency and its natural colour*/
 class Sphere
 {
 public:
@@ -26,6 +27,7 @@ public:
         transparency(transp), reflection(refl)
     { /* empty */
     }
+    /**Finds the intersection point of the raydir and the spheres*/
     bool intersect(const Vec3f& rayorig, const Vec3f& raydir, float& t0, float& t1) const
     {
         Vec3f l = center - rayorig;
